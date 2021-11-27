@@ -3,11 +3,14 @@ package service
 import (
 	"context"
 	"flag"
+	"strings"
+
+	"zigbee2mqtt2openhab/processor"
+
 	"github.com/joomcode/errorx"
 	"github.com/kardianos/service"
+	"go.uber.org/dig"
 	"golang.org/x/sync/errgroup"
-	"strings"
-	"time"
 )
 
 var (
@@ -72,23 +75,32 @@ func (svc *Service) Run() error {
 	return nil
 }
 
-func (svc *Service) run() error {
-	ctx := svc.ctx
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-		}
-		time.Sleep(1 * time.Second)
+func (svc *Service) run(c *dig.Container) error {
+	err := c.Invoke(func(ctx context.Context, p *processor.Processor) error {
+		return p.Process(ctx)
+	})
+	if err != nil {
+		return CommonErrors.WrapWithNoMessage(err)
 	}
+	return nil
 }
 
 func (svc *Service) Start(_ service.Service) error {
 	_ = svc.logger.Info("Starting service...")
 	svc.ctx, svc.cancel = context.WithCancel(context.Background())
 	svc.g = &errgroup.Group{}
-	svc.g.Go(svc.run)
+	c, err := svc.makeContainer()
+	if err != nil {
+		_ = svc.logger.Errorf("Starting service: %+v", err)
+		return err
+	}
+	svc.g.Go(func() error {
+		err := svc.run(c)
+		if err != nil {
+			panic(err)
+		}
+		return nil
+	})
 	return nil
 }
 
