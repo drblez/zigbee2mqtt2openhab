@@ -20,11 +20,13 @@ type Config struct {
 func New() (*Config, error) {
 	v := viper.New()
 	v.SetConfigType("yaml")
-	v.SetConfigFile("zigbee2mqtt2openhab")
+	v.SetConfigFile("zigbee2mqtt2openhab.yaml")
 	v.AddConfigPath(".")
 	v.AddConfigPath("~/.zigbee2mqtt2openhab")
 	v.AddConfigPath(filepath.Dir(os.Args[0]))
 	v.SetDefault(loggerLevel, defaultLoggerLevel)
+	v.SetDefault(z2mTopic, defaultZ2MTopic)
+	v.SetDefault(openHABTopic, defaultOpenHABTopic)
 	if err := v.ReadInConfig(); err != nil {
 		if !os.IsNotExist(err) {
 			return nil, err
@@ -39,6 +41,12 @@ const (
 
 	loggerLevel        = "log.level"
 	defaultLoggerLevel = "debug"
+
+	z2mTopic        = "mq.z2m.topic"
+	defaultZ2MTopic = "zigbee2mqtt/oh"
+
+	openHABTopic        = "mq.openhab.topic"
+	defaultOpenHABTopic = "openhab"
 )
 
 func (cfg *Config) MQZ2MAddress() string {
@@ -47,6 +55,14 @@ func (cfg *Config) MQZ2MAddress() string {
 
 func (cfg *Config) MQOpenHABAddress() string {
 	return cfg.v.GetString(mqOpenHABAddress)
+}
+
+func (cfg *Config) MQZ2MTopic() string {
+	return cfg.v.GetString(z2mTopic)
+}
+
+func (cfg *Config) MQOpenHABTopic() string {
+	return cfg.v.GetString(openHABTopic)
 }
 
 func (cfg *Config) LoggerLevel() string {

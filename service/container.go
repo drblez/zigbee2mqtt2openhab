@@ -30,7 +30,7 @@ func (svc *Service) makeContainer() (*dig.Container, error) {
 		return config.New()
 	})
 	add(func(cfg *config.Config, log *logrus.Logger) (*processor.Processor, error) {
-		return processor.New(log)
+		return processor.New(cfg, log)
 	})
 	if err != nil {
 		return nil, CommonErrors.WrapWithNoMessage(err)
