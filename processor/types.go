@@ -1,7 +1,5 @@
 package processor
 
-import "strconv"
-
 type CommonData struct {
 	Battery     int `json:"battery"`
 	Voltage     int `json:"voltage"`
@@ -9,25 +7,27 @@ type CommonData struct {
 }
 
 /*{
+  "battery": 100,
+  "contact": true,
   "device": {
-    "applicationVersion": 2,
-    "dateCode": "20160516",
-    "friendlyName": "0x00158d0003a0026c",
-    "hardwareVersion": 30,
-    "ieeeAddr": "0x00158d0003a0026c",
+    "applicationVersion": 3,
+    "dateCode": "20161128",
+    "friendlyName": "oh/office_window",
+    "hardwareVersion": 2,
+    "ieeeAddr": "0x00158d0001b91e14",
     "manufacturerID": 4151,
     "manufacturerName": "LUMI",
-    "model": "WSDCGQ01LM",
-    "networkAddress": 7545,
+    "model": "MCCGQ11LM",
+    "networkAddress": 54897,
     "powerSource": "Battery",
     "softwareBuildID": "3000-0001",
     "stackVersion": 2,
     "type": "EndDevice",
     "zclVersion": 1
   },
-  "humidity": 33.66,
-  "linkquality": 159,
-  "temperature": 25.98
+  "linkquality": 156,
+  "temperature": 30,
+  "voltage": 3035
 }
 */
 
@@ -42,29 +42,25 @@ type CommonData struct {
 */
 
 type WindowsSwitch struct {
-	Contact     *bool    `json:"contact"`
-	Temperature *float64 `json:"temperature"`
+	Temperature interface{} `json:"temperature"`
+	Contact     *bool       `json:"contact"`
 }
 
 func (data *WindowsSwitch) Present() bool {
-	return data.Contact != nil && data.Temperature != nil
+	return data.Contact != nil //&& data.Temperature != nil
 }
 
 func (data *WindowsSwitch) Messages(root string) (msgs []*Message) {
 	if !data.Present() {
 		return nil
 	}
-	msg := &Message{Topic: root + "_contact/state"}
+	msg := &Message{Topic: root + "_contact/state/set"}
 	if *data.Contact {
 		msg.Payload = []byte("CLOSED")
 	} else {
 		msg.Payload = []byte("OPEN")
 	}
 	msgs = append(msgs, msg)
-	msg = &Message{
-		Topic:   root + "_temperature/state",
-		Payload: []byte(strconv.FormatFloat(*data.Temperature, 'f', 2, 64)),
-	}
 	return
 }
 

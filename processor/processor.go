@@ -43,7 +43,7 @@ type Message struct {
 }
 
 func (p *Processor) Process(ctx context.Context) error {
-	mqtt.DEBUG = p.log.WithField("mqtt_level", "debug")
+	//mqtt.DEBUG = p.log.WithField("mqtt_level", "debug")
 	mqtt.WARN = p.log.WithField("mqtt_level", "warn")
 	mqtt.CRITICAL = p.log.WithField("mqtt_level", "critical")
 	mqtt.ERROR = p.log.WithField("mqtt_level", "error")
@@ -83,6 +83,8 @@ LOOP:
 					log.Errorf("unmarshal: %+v", CommonErrors.WrapWithNoMessage(err))
 					return
 				}
+				p.log.Debugf("Payload: %s", message.Payload())
+				p.log.Debugf("Data: %+v", data)
 				root := strings.TrimSuffix(p.cfg.MQOpenHABTopic()+strings.TrimPrefix(message.Topic(), p.cfg.MQZ2MTopic()), "/")
 				msgs := data.Messages(root)
 				go func() {
