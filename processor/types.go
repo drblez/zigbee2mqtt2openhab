@@ -1,9 +1,24 @@
 package processor
 
+import "strconv"
+
 type CommonData struct {
 	Battery     int `json:"battery"`
 	Voltage     int `json:"voltage"`
 	LinkQuality int `json:"linkquality"`
+}
+
+func (data *CommonData) Messages(root string) (msgs []*Message) {
+	msg := &Message{Topic: root + "_battery/state/set"}
+	msg.Payload = []byte(strconv.Itoa(data.Battery))
+	msgs = append(msgs, msg)
+	msg = &Message{Topic: root + "_voltage/state/set"}
+	msg.Payload = []byte(strconv.Itoa(data.Battery))
+	msgs = append(msgs, msg)
+	msg = &Message{Topic: root + "_linkquality/state/set"}
+	msg.Payload = []byte(strconv.Itoa(data.Battery))
+	msgs = append(msgs, msg)
+	return
 }
 
 /*{
@@ -42,17 +57,12 @@ type CommonData struct {
 */
 
 type WindowsSwitch struct {
-	Temperature interface{} `json:"temperature"`
-	Contact     *bool       `json:"contact"`
-}
-
-func (data *WindowsSwitch) Present() bool {
-	return data.Contact != nil //&& data.Temperature != nil
+	Contact *bool `json:"contact"`
 }
 
 func (data *WindowsSwitch) Messages(root string) (msgs []*Message) {
-	if !data.Present() {
-		return nil
+	if data.Contact == nil {
+		return
 	}
 	msg := &Message{Topic: root + "_contact/state/set"}
 	if *data.Contact {
@@ -77,13 +87,9 @@ type PushButton struct {
 	Action *string `json:"action"`
 }
 
-func (data *PushButton) Present() bool {
-	return data.Action != nil
-}
-
 func (data *PushButton) Messages(root string) (msgs []*Message) {
-	if !data.Present() {
-		return nil
+	if data.Action == nil {
+		return
 	}
 	topic := root + "_" + *data.Action + "/state/set"
 	msgs = append(msgs, &Message{
@@ -105,9 +111,8 @@ func (data *PushButton) Messages(root string) (msgs []*Message) {
 }
 */
 
-type HumidityTemperature struct {
-	Humidity    *float64 `json:"humidity"`
-	Temperature *float64 `json:"temperature"`
+type Humidity struct {
+	Humidity *float64 `json:"humidity"`
 }
 
 /* Датчик движения
@@ -119,22 +124,62 @@ type HumidityTemperature struct {
 }
 */
 
+func (data *Humidity) Present() bool {
+	return data.Humidity != nil
+}
+
+func (data *Humidity) Messages(root string) (msgs []*Message) {
+	if data.Humidity == nil {
+		return
+	}
+	msg := &Message{Topic: root + "_humidity/state/set"}
+	msg.Payload = []byte(strconv.FormatFloat(*data.Humidity, 'f', 2, 64))
+	msgs = append(msgs, msg)
+	return
+}
+
+type Temperature struct {
+	Temperature *float64 `json:"temperature"`
+}
+
+func (data *Temperature) Messages(root string) (msgs []*Message) {
+	if data.Temperature == nil {
+		return
+	}
+	msg := &Message{Topic: root + "_temperature/state/set"}
+	msg.Payload = []byte(strconv.FormatFloat(*data.Temperature, 'f', 2, 64))
+	msgs = append(msgs, msg)
+	return
+}
+
 type Motion struct {
-	Illuminance    *int `json:"illuminance"`
-	IlluminanceLux *int `json:"illuminance_lux"`
-	Occupancy      *int `json:"occupancy"`
+	Illuminance    *int  `json:"illuminance"`
+	IlluminanceLux *int  `json:"illuminance_lux"`
+	Occupancy      *bool `json:"occupancy"`
+}
+
+func (data *Motion) Message(root string) (msgs []*Message) {
+	if data.Illuminance != nil {
+		msg := &Message{Topic: root + "_illuminance/state/set"}
+		msg.Payload = []byte(strconv.Itoa(*data.Illuminance))
+		msgs = append(msgs, msg)
+	}
+	return
 }
 
 type DeviceData struct {
 	CommonData
 	WindowsSwitch
 	PushButton
-	HumidityTemperature
+	Humidity
+	Temperature
 	Motion
 }
 
 func (data *DeviceData) Messages(root string) (msgs []*Message) {
 	msgs = append(msgs, data.WindowsSwitch.Messages(root)...)
 	msgs = append(msgs, data.PushButton.Messages(root)...)
+	msgs = append(msgs, data.Humidity.Messages(root)...)
+	msgs = append(msgs, data.Temperature.Messages(root)...)
 	return
 }
