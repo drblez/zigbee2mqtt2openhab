@@ -23,6 +23,7 @@ func New() (*Config, error) {
 	v.SetConfigFile("zigbee2mqtt2openhab.yaml")
 	v.AddConfigPath(".")
 	v.AddConfigPath("~/.zigbee2mqtt2openhab")
+	v.AddConfigPath("/etc/zigbee2mqtt2openhab")
 	v.AddConfigPath(filepath.Dir(os.Args[0]))
 	v.SetDefault(loggerLevel, defaultLoggerLevel)
 	v.SetDefault(z2mTopic, defaultZ2MTopic)
