@@ -20,7 +20,7 @@ type Config struct {
 func New() (*Config, error) {
 	v := viper.New()
 	v.SetConfigType("yaml")
-	v.SetConfigFile("zigbee2mqtt2openhab.yaml")
+	v.SetConfigName("zigbee2mqtt2openhab")
 	v.AddConfigPath(".")
 	v.AddConfigPath("~/.zigbee2mqtt2openhab")
 	v.AddConfigPath("/etc/zigbee2mqtt2openhab")

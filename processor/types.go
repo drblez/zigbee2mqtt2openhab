@@ -1,6 +1,10 @@
 package processor
 
-import "strconv"
+import (
+	"strconv"
+
+	"zigbee2mqtt2openhab/utils"
+)
 
 type CommonData struct {
 	Battery     int `json:"battery"`
@@ -13,10 +17,10 @@ func (data *CommonData) Messages(root string) (msgs []*Message) {
 	msg.Payload = []byte(strconv.Itoa(data.Battery))
 	msgs = append(msgs, msg)
 	msg = &Message{Topic: root + "_voltage/state/set"}
-	msg.Payload = []byte(strconv.Itoa(data.Battery))
+	msg.Payload = []byte(strconv.Itoa(data.Voltage))
 	msgs = append(msgs, msg)
 	msg = &Message{Topic: root + "_linkquality/state/set"}
-	msg.Payload = []byte(strconv.Itoa(data.Battery))
+	msg.Payload = []byte(strconv.Itoa(data.LinkQuality))
 	msgs = append(msgs, msg)
 	return
 }
@@ -65,11 +69,7 @@ func (data *WindowsSwitch) Messages(root string) (msgs []*Message) {
 		return
 	}
 	msg := &Message{Topic: root + "_contact/state/set"}
-	if *data.Contact {
-		msg.Payload = []byte("CLOSED")
-	} else {
-		msg.Payload = []byte("OPEN")
-	}
+	msg.Payload = []byte(utils.BoolToString(*data.Contact, "CLOSED", "OPEN"))
 	msgs = append(msgs, msg)
 	return
 }
@@ -164,6 +164,16 @@ func (data *Motion) Message(root string) (msgs []*Message) {
 		msg.Payload = []byte(strconv.Itoa(*data.Illuminance))
 		msgs = append(msgs, msg)
 	}
+	if data.IlluminanceLux != nil {
+		msg := &Message{Topic: root + "_illuminance_lux/state/set"}
+		msg.Payload = []byte(strconv.Itoa(*data.IlluminanceLux))
+		msgs = append(msgs, msg)
+	}
+	if data.Occupancy != nil {
+		msg := &Message{Topic: root + "_occupancy/state/set"}
+		msg.Payload = []byte(utils.BoolToString(*data.Occupancy, "ON", "OFF"))
+		msgs = append(msgs, msg)
+	}
 	return
 }
 
@@ -177,9 +187,11 @@ type DeviceData struct {
 }
 
 func (data *DeviceData) Messages(root string) (msgs []*Message) {
+	msgs = append(msgs, data.CommonData.Messages(root)...)
 	msgs = append(msgs, data.WindowsSwitch.Messages(root)...)
 	msgs = append(msgs, data.PushButton.Messages(root)...)
 	msgs = append(msgs, data.Humidity.Messages(root)...)
 	msgs = append(msgs, data.Temperature.Messages(root)...)
+	msgs = append(msgs, data.Motion.Message(root)...)
 	return
 }
